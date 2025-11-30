@@ -1,0 +1,7 @@
+{
+  "name": "Renkli Şifreler Dünyası",
+  "description": "5-6 yaş çocuklar için ses kontrollü, eğitici, yapay zeka destekli oyun ve sanat atölyesi.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
