@@ -11,7 +11,7 @@ interface Props {
   level: number; // Level comes from App state now
 }
 
-const DEFAULT_EMOJIS = ['🐱', '🐶', '🐦', '🐠', '🦖', '🐘', '🦄', '🐙', '🦋', '🐞', '🦁', '🐨'];
+const DEFAULT_EMOJIS = ['🐱', '🐶', '🐦', '🐠', '🦖', '🐘', '🐙', '🦋', '🐞', '🦁', '🐨'];
 
 const MiniGamesArena: React.FC<Props> = ({ gameType, characterPool, onWin, onLoseLife, onRestart, lives, level }) => {
   const [feedback, setFeedback] = useState<'neutral' | 'success' | 'error'>('neutral');
@@ -480,8 +480,8 @@ const MiniGamesArena: React.FC<Props> = ({ gameType, characterPool, onWin, onLos
         case AppScreen.SHADOW_MATCH:
             return (
                 <div className="flex flex-col items-center gap-8 w-full max-w-lg">
-                    <div className="bg-white p-8 rounded-full shadow-inner border-4 border-gray-100 overflow-hidden w-80 h-80 md:w-96 md:h-96 flex items-center justify-center transform hover:scale-105 transition-transform">
-                        <div className="w-full h-full filter brightness-0 contrast-200 mix-blend-multiply opacity-90 transition-all flex items-center justify-center text-[8rem] md:text-[10rem]">
+                    <div className="bg-white p-6 rounded-full shadow-inner border-4 border-gray-100 overflow-hidden w-48 h-48 md:w-64 md:h-64 flex items-center justify-center transform hover:scale-105 transition-transform">
+                        <div className="w-full h-full filter brightness-0 contrast-200 mix-blend-multiply opacity-90 transition-all flex items-center justify-center text-6xl md:text-8xl">
                              {renderIcon(shTarget, "w-full h-full object-contain")}
                         </div>
                     </div>

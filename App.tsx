@@ -33,7 +33,8 @@ const App: React.FC = () => {
 
   // Generate random background items for Splash Screen once
   const splashItems = useMemo(() => {
-    const icons = ['❓', '🗝️', '🔒', '⭐', '🧩', '🎨', '1', 'A', '🌈', '🎲', '🦄', '🚀', '🍩'];
+    // Removed Unicorn ('🦄') from this list
+    const icons = ['❓', '🗝️', '🔒', '⭐', '🧩', '🎨', '1', 'A', '🌈', '🎲', '🚀', '🍩'];
     return Array.from({ length: 35 }).map((_, i) => ({
       id: i,
       icon: icons[Math.floor(Math.random() * icons.length)],
@@ -220,54 +221,54 @@ const App: React.FC = () => {
             </div>
         ))}
 
-        <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col items-center">
+        <div className="relative z-10 w-full max-w-2xl px-4 flex flex-col items-center">
             
-            {/* Main Glass Card */}
-            <div className="w-full bg-white/40 backdrop-blur-xl border-8 border-white/60 rounded-[3rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.1)] flex flex-col items-center text-center transform hover:scale-[1.01] transition-transform duration-500">
+            {/* Main Glass Card - Made more compact (max-w-2xl and smaller padding) */}
+            <div className="w-full bg-white/40 backdrop-blur-xl border-8 border-white/60 rounded-[2.5rem] p-6 md:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.1)] flex flex-col items-center text-center transform hover:scale-[1.01] transition-transform duration-500">
                 
-                {/* Logo Area */}
-                <div className="mb-6 relative group cursor-pointer">
+                {/* Logo Area - Slightly smaller */}
+                <div className="mb-4 relative group cursor-pointer">
                     <div className="absolute inset-0 bg-yellow-300 blur-3xl opacity-60 rounded-full animate-pulse"></div>
-                    <div className="relative z-10 bg-white p-6 rounded-full shadow-lg border-4 border-yellow-400 text-7xl md:text-8xl transform group-hover:rotate-12 transition-transform duration-300">
+                    <div className="relative z-10 bg-white p-5 rounded-full shadow-lg border-4 border-yellow-400 text-6xl md:text-7xl transform group-hover:rotate-12 transition-transform duration-300">
                         👾
                     </div>
-                    <div className="absolute -right-4 -top-4 text-5xl animate-bounce" style={{ animationDelay: '0.2s' }}>🗝️</div>
-                    <div className="absolute -left-4 -bottom-4 text-5xl animate-bounce" style={{ animationDelay: '0.5s' }}>🎨</div>
+                    <div className="absolute -right-3 -top-3 text-4xl animate-bounce" style={{ animationDelay: '0.2s' }}>🗝️</div>
+                    <div className="absolute -left-3 -bottom-3 text-4xl animate-bounce" style={{ animationDelay: '0.5s' }}>🎨</div>
                 </div>
                 
-                {/* Title */}
-                <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-700 via-pink-600 to-red-500 mb-4 drop-shadow-sm leading-tight tracking-tight">
+                {/* Title - Smaller Font */}
+                <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-700 via-pink-600 to-red-500 mb-2 drop-shadow-sm leading-tight tracking-tight">
                     RENKLİ<br/>
-                    <span className="text-4xl md:text-6xl">ŞİFRELER DÜNYASI</span>
+                    <span className="text-3xl md:text-5xl">ŞİFRELER DÜNYASI</span>
                 </h1>
                 
-                <p className="text-xl md:text-2xl text-gray-700 font-bold mb-8 tracking-wide opacity-80">
+                <p className="text-lg md:text-xl text-gray-700 font-bold mb-6 tracking-wide opacity-80">
                     Hayal Et • Boya • Oyna
                 </p>
 
-                {/* Info Card about Voice */}
-                <div className="bg-white/90 p-6 rounded-3xl border-4 border-purple-300 shadow-xl mb-8 max-w-lg transform -rotate-1 hover:rotate-0 transition-transform">
-                    <div className="flex items-center justify-center gap-3 mb-2">
-                         <span className="text-4xl">👋</span>
-                         <h3 className="text-2xl font-bold text-purple-700">Merhaba Arkadaşım!</h3>
+                {/* Info Card about Voice - More compact */}
+                <div className="bg-white/90 p-4 rounded-3xl border-4 border-purple-300 shadow-xl mb-6 max-w-full transform -rotate-1 hover:rotate-0 transition-transform">
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                         <span className="text-3xl">👋</span>
+                         <h3 className="text-xl font-bold text-purple-700">Merhaba Arkadaşım!</h3>
                     </div>
-                    <p className="text-gray-600 text-lg font-medium leading-relaxed">
+                    <p className="text-gray-600 text-base font-medium leading-relaxed">
                         Seninle konuşmak ve oyun oynamak istiyorum. <br/>
                         Mikrofonu açmak için aşağıdaki <br/>
                         <span className="text-green-600 font-bold bg-green-100 px-2 py-1 rounded-lg inline-block mt-1">YEŞİL BUTONA BAS</span> yeterli!
                     </p>
                 </div>
 
-                {/* Big Action Button */}
+                {/* Big Action Button - Adjusted padding */}
                 <button 
                 onClick={handleStartGame}
-                className="group relative bg-gradient-to-b from-green-400 to-green-600 text-white py-6 px-12 md:px-16 rounded-full shadow-[0_10px_0_#15803d] hover:shadow-[0_15px_0_#15803d] hover:-translate-y-2 active:shadow-none active:translate-y-4 transition-all overflow-hidden w-full md:w-auto"
+                className="group relative bg-gradient-to-b from-green-400 to-green-600 text-white py-4 px-10 md:px-14 rounded-full shadow-[0_8px_0_#15803d] hover:shadow-[0_12px_0_#15803d] hover:-translate-y-2 active:shadow-none active:translate-y-4 transition-all overflow-hidden w-full md:w-auto"
                 >
                     <div className="relative z-10 flex flex-col items-center justify-center">
-                        <span className="text-3xl md:text-4xl font-black flex items-center gap-3 drop-shadow-md">
+                        <span className="text-2xl md:text-3xl font-black flex items-center gap-2 drop-shadow-md">
                            OYUNA BAŞLA 
                         </span>
-                        <span className="text-lg md:text-xl font-bold text-green-100 bg-green-700/30 px-4 py-1 rounded-full mt-2 flex items-center gap-2">
+                        <span className="text-sm md:text-base font-bold text-green-100 bg-green-700/30 px-3 py-1 rounded-full mt-1 flex items-center gap-1">
                            & GEMINI İLE KONUŞ 🎙️
                         </span>
                     </div>

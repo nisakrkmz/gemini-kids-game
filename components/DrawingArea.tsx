@@ -417,7 +417,6 @@ const DrawingArea: React.FC<Props> = ({ voiceRequestedShape, onShapeHandled, onS
                  <button onClick={() => loadTemplate('dog')} className="template-btn">🐶 Köpek</button>
                  <button onClick={() => loadTemplate('dino')} className="template-btn">🦖 Dinozor</button>
                  <button onClick={() => loadTemplate('robot')} className="template-btn">🤖 Robot</button>
-                 <button onClick={() => loadTemplate('unicorn')} className="template-btn">🦄 Unicorn</button>
                  <div className="w-px h-8 bg-blue-200"></div>
                  <button onClick={() => loadTemplate('house')} className="template-btn">🏠 Ev</button>
                  <button onClick={() => loadTemplate('car')} className="template-btn">🚗 Araba</button>
