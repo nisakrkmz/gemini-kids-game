@@ -1,9 +1,19 @@
+
 export enum AppScreen {
   INTRO = 'INTRO',
   MENU = 'MENU',
   CHARACTER_CREATOR = 'CHARACTER_CREATOR',
   PAINTING = 'PAINTING',
-  CIPHER_GAME = 'CIPHER_GAME',
+  CIPHER_GAME = 'CIPHER_GAME', // Decode/Password game
+  PATTERN_GAME = 'PATTERN_GAME', // Pattern logic
+  // NEW GAMES
+  TREASURE_HUNT = 'TREASURE_HUNT',
+  MEMORY_GAME = 'MEMORY_GAME',
+  MISSING_SYMBOL = 'MISSING_SYMBOL',
+  NUMBER_HUNTER = 'NUMBER_HUNTER',
+  DETECTIVE_GAME = 'DETECTIVE_GAME',
+  SHADOW_MATCH = 'SHADOW_MATCH',
+  
   AVATAR_CREATOR = 'AVATAR_CREATOR',
 }
 
@@ -14,6 +24,10 @@ export enum CharacterType {
   FISH = 'Balık',
   DINOSAUR = 'Dinozor',
   ELEPHANT = 'Fil',
+  TURTLE = 'Kaplumbağa',
+  RABBIT = 'Tavşan',
+  LION = 'Aslan',
+  PANDA = 'Panda',
 }
 
 export enum CharacterColor {

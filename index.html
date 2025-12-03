@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Renkli Şifreler Dünyası</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
       body {
         font-family: 'Fredoka', sans-serif;
@@ -24,6 +24,24 @@
         50% { transform: translate(20px, 40px) rotate(10deg); }
         100% { transform: translate(0, 0) rotate(0deg); }
       }
+      
+      /* Splash Screen Animations */
+      @keyframes floatUp {
+        0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
+      }
+      
+      .animate-float-up {
+        animation: floatUp linear infinite;
+      }
+
+      @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); transform: scale(1); }
+        50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.6); transform: scale(1.02); }
+      }
+      
       /* Custom Scrollbar for kids */
       ::-webkit-scrollbar {
         width: 12px;

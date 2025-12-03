@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Layout from './components/Layout';
 import Menu from './components/Menu';
 import CharacterCreator from './components/CharacterCreator';
 import DrawingArea from './components/DrawingArea';
-import CipherGame from './components/CipherGame';
+import GameArena from './components/CipherGame';
+import MiniGamesArena from './components/MiniGamesArena';
 import VoiceController from './components/VoiceController';
 import { AppScreen, GameState, CharacterType, CharacterColor, SavedCharacter } from './types';
 
 const App: React.FC = () => {
   const [hasStarted, setHasStarted] = useState(false);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isMicOn, setIsMicOn] = useState(true);
   
   // State to communicate voice commands to DrawingArea
   const [activeDrawingShape, setActiveDrawingShape] = useState<string | null>(null);
@@ -27,6 +30,21 @@ const App: React.FC = () => {
     lives: 3,
     score: 0,
   });
+
+  // Generate random background items for Splash Screen once
+  const splashItems = useMemo(() => {
+    const icons = ['❓', '🗝️', '🔒', '⭐', '🧩', '🎨', '1', 'A', '🌈', '🎲', '🦄', '🚀', '🍩'];
+    return Array.from({ length: 35 }).map((_, i) => ({
+      id: i,
+      icon: icons[Math.floor(Math.random() * icons.length)],
+      left: `${Math.random() * 100}%`,
+      // Negative delay ensures items are already mid-flight when screen loads
+      delay: `${-(Math.random() * 20)}s`, 
+      duration: `${15 + Math.random() * 15}s`,
+      size: `${3 + Math.random() * 4}rem`, // Bigger icons
+      color: ['text-pink-400', 'text-blue-400', 'text-yellow-400', 'text-purple-400', 'text-green-400', 'text-red-300'][Math.floor(Math.random() * 6)]
+    }));
+  }, []);
 
   const handleStartGame = async () => {
     // Create and resume AudioContext within the user gesture (click)
@@ -46,7 +64,18 @@ const App: React.FC = () => {
   // --- Actions Handlers ---
 
   const handleNavigate = (screen: AppScreen) => {
-    setGameState(prev => ({ ...prev, currentScreen: screen }));
+    // Reset game state when entering a game
+    if (screen !== AppScreen.MENU) {
+        setGameState(prev => ({ ...prev, currentScreen: screen, gameLevel: 1, lives: 3, score: 0 }));
+    } else {
+        setGameState(prev => ({ ...prev, currentScreen: screen }));
+    }
+  };
+
+  const handleGoHome = () => {
+    // Return to menu, keep score but maybe reset level or lives? 
+    // For now, just change screen to MENU.
+    setGameState(prev => ({ ...prev, currentScreen: AppScreen.MENU }));
   };
 
   const handleSaveCharacter = (newChar: SavedCharacter) => {
@@ -116,11 +145,13 @@ const App: React.FC = () => {
             <DrawingArea 
                 voiceRequestedShape={activeDrawingShape} 
                 onShapeHandled={() => setActiveDrawingShape(null)}
+                onSaveToPool={handleSaveCharacter}
             />
         );
       case AppScreen.CIPHER_GAME:
         return (
-          <CipherGame 
+          <GameArena 
+            mode="DECODE"
             characterPool={gameState.characterPool}
             lives={gameState.lives}
             level={gameState.gameLevel}
@@ -129,6 +160,37 @@ const App: React.FC = () => {
             onRestart={handleRestartGame}
           />
         );
+      case AppScreen.PATTERN_GAME:
+        return (
+            <GameArena 
+              mode="PATTERN"
+              characterPool={gameState.characterPool}
+              lives={gameState.lives}
+              level={gameState.gameLevel}
+              onWin={handleLevelUp}
+              onLoseLife={handleLoseLife}
+              onRestart={handleRestartGame}
+            />
+        );
+      // NEW MINI GAMES
+      case AppScreen.TREASURE_HUNT:
+      case AppScreen.MEMORY_GAME:
+      case AppScreen.MISSING_SYMBOL:
+      case AppScreen.NUMBER_HUNTER:
+      case AppScreen.DETECTIVE_GAME:
+      case AppScreen.SHADOW_MATCH:
+          return (
+              <MiniGamesArena 
+                gameType={gameState.currentScreen}
+                characterPool={gameState.characterPool}
+                lives={gameState.lives}
+                level={gameState.gameLevel}
+                onWin={handleLevelUp}
+                onLoseLife={handleLoseLife}
+                onRestart={handleRestartGame}
+              />
+          );
+
       case AppScreen.AVATAR_CREATOR:
         return <div>Avatar Creator (Coming Soon)</div>;
       default:
@@ -139,18 +201,90 @@ const App: React.FC = () => {
   // --- Splash Screen ---
   if (!hasStarted) {
     return (
-      <div className="fixed inset-0 bg-yellow-100 flex flex-col items-center justify-center z-50 p-4">
-        <div className="blob bg-purple-300 w-96 h-96 rounded-full absolute mix-blend-multiply opacity-50 animate-pulse"></div>
-        <h1 className="text-5xl md:text-7xl font-bold text-purple-600 mb-8 text-center drop-shadow-md relative z-10">
-          Renkli Şifreler<br/>Dünyası
-        </h1>
-        <button 
-          onClick={handleStartGame}
-          className="bg-gradient-to-r from-pink-500 to-orange-400 text-white text-4xl font-bold py-8 px-16 rounded-full shadow-[0_10px_0_rgb(0,0,0,0.2)] hover:scale-105 active:scale-95 active:shadow-none transition-all relative z-10"
-        >
-          OYUNA BAŞLA! ▶
-        </button>
-        <p className="mt-8 text-gray-500 text-lg relative z-10">Mikrofon izni isteyecektir 🎤</p>
+      <div className="fixed inset-0 bg-gradient-to-br from-indigo-300 via-purple-200 to-pink-200 flex flex-col items-center justify-center z-50 overflow-hidden">
+        
+        {/* Animated Background Items */}
+        {splashItems.map((item) => (
+            <div 
+                key={item.id}
+                className={`absolute animate-float-up opacity-60 select-none font-black ${item.color}`}
+                style={{
+                    left: item.left,
+                    fontSize: item.size,
+                    animationDelay: item.delay,
+                    animationDuration: item.duration,
+                    top: '100%' // Start below screen (animation moves it up)
+                }}
+            >
+                {item.icon}
+            </div>
+        ))}
+
+        <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col items-center">
+            
+            {/* Main Glass Card */}
+            <div className="w-full bg-white/40 backdrop-blur-xl border-8 border-white/60 rounded-[3rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.1)] flex flex-col items-center text-center transform hover:scale-[1.01] transition-transform duration-500">
+                
+                {/* Logo Area */}
+                <div className="mb-6 relative group cursor-pointer">
+                    <div className="absolute inset-0 bg-yellow-300 blur-3xl opacity-60 rounded-full animate-pulse"></div>
+                    <div className="relative z-10 bg-white p-6 rounded-full shadow-lg border-4 border-yellow-400 text-7xl md:text-8xl transform group-hover:rotate-12 transition-transform duration-300">
+                        👾
+                    </div>
+                    <div className="absolute -right-4 -top-4 text-5xl animate-bounce" style={{ animationDelay: '0.2s' }}>🗝️</div>
+                    <div className="absolute -left-4 -bottom-4 text-5xl animate-bounce" style={{ animationDelay: '0.5s' }}>🎨</div>
+                </div>
+                
+                {/* Title */}
+                <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-700 via-pink-600 to-red-500 mb-4 drop-shadow-sm leading-tight tracking-tight">
+                    RENKLİ<br/>
+                    <span className="text-4xl md:text-6xl">ŞİFRELER DÜNYASI</span>
+                </h1>
+                
+                <p className="text-xl md:text-2xl text-gray-700 font-bold mb-8 tracking-wide opacity-80">
+                    Hayal Et • Boya • Oyna
+                </p>
+
+                {/* Info Card about Voice */}
+                <div className="bg-white/90 p-6 rounded-3xl border-4 border-purple-300 shadow-xl mb-8 max-w-lg transform -rotate-1 hover:rotate-0 transition-transform">
+                    <div className="flex items-center justify-center gap-3 mb-2">
+                         <span className="text-4xl">👋</span>
+                         <h3 className="text-2xl font-bold text-purple-700">Merhaba Arkadaşım!</h3>
+                    </div>
+                    <p className="text-gray-600 text-lg font-medium leading-relaxed">
+                        Seninle konuşmak ve oyun oynamak istiyorum. <br/>
+                        Mikrofonu açmak için aşağıdaki <br/>
+                        <span className="text-green-600 font-bold bg-green-100 px-2 py-1 rounded-lg inline-block mt-1">YEŞİL BUTONA BAS</span> yeterli!
+                    </p>
+                </div>
+
+                {/* Big Action Button */}
+                <button 
+                onClick={handleStartGame}
+                className="group relative bg-gradient-to-b from-green-400 to-green-600 text-white py-6 px-12 md:px-16 rounded-full shadow-[0_10px_0_#15803d] hover:shadow-[0_15px_0_#15803d] hover:-translate-y-2 active:shadow-none active:translate-y-4 transition-all overflow-hidden w-full md:w-auto"
+                >
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                        <span className="text-3xl md:text-4xl font-black flex items-center gap-3 drop-shadow-md">
+                           OYUNA BAŞLA 
+                        </span>
+                        <span className="text-lg md:text-xl font-bold text-green-100 bg-green-700/30 px-4 py-1 rounded-full mt-2 flex items-center gap-2">
+                           & GEMINI İLE KONUŞ 🎙️
+                        </span>
+                    </div>
+                    
+                    {/* Shine Effect */}
+                    <div className="absolute top-0 -left-full w-full h-full bg-white/30 skew-x-12 group-hover:animate-[shine_1s_infinite]"></div>
+                </button>
+                
+            </div>
+        </div>
+
+        {/* CSS for button shine if needed, or rely on existing styles */}
+        <style>{`
+            @keyframes shine {
+                100% { left: 125%; }
+            }
+        `}</style>
       </div>
     );
   }
@@ -161,6 +295,11 @@ const App: React.FC = () => {
         currentScreen={gameState.currentScreen} 
         onBack={() => handleNavigate(AppScreen.MENU)}
         avatarMood={gameState.avatarMood}
+        score={gameState.score}
+        isMuted={isMuted}
+        onToggleMute={() => setIsMuted(!isMuted)}
+        isMicOn={isMicOn}
+        onToggleMic={() => setIsMicOn(!isMicOn)}
       >
         {renderScreen()}
       </Layout>
@@ -171,6 +310,8 @@ const App: React.FC = () => {
           onAction={handleVoiceAction} 
           gameState={gameState} 
           audioContext={audioContext}
+          isMuted={isMuted}
+          isMicOn={isMicOn}
         />
       )}
     </>

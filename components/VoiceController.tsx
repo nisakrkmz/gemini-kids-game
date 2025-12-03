@@ -8,18 +8,30 @@ interface Props {
   onAction: (action: any) => void;
   gameState: any;
   audioContext: AudioContext;
+  isMuted: boolean;
+  isMicOn: boolean;
 }
 
-const VoiceController: React.FC<Props> = ({ onAction, audioContext }) => {
+const VoiceController: React.FC<Props> = ({ onAction, audioContext, isMuted, isMicOn }) => {
   const [isActive, setIsActive] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false); // New state for visual feedback
+  const [isSpeaking, setIsSpeaking] = useState(false); 
   const [error, setError] = useState<string | null>(null);
   
   // Audio Refs
   const inputSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  
+  // Playback Refs
   const nextStartTimeRef = useRef<number>(0);
+  const activeSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
+
+  // Sync prop to ref for use inside onaudioprocess closure
+  const isMicOnRef = useRef(isMicOn);
+  useEffect(() => {
+    isMicOnRef.current = isMicOn;
+  }, [isMicOn]);
 
   useEffect(() => {
     startSession();
@@ -34,9 +46,15 @@ const VoiceController: React.FC<Props> = ({ onAction, audioContext }) => {
     }
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            } 
+        });
         
-        // Input Context (Mic) - Output Context is passed via props (audioContext)
+        // Input Context (Mic)
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
         const inputContext = new AudioContextClass({ sampleRate: 16000 }); 
 
@@ -48,17 +66,27 @@ const VoiceController: React.FC<Props> = ({ onAction, audioContext }) => {
                 systemInstruction: SYSTEM_INSTRUCTION,
                 responseModalities: [Modality.AUDIO],
                 tools: [{ functionDeclarations: tools }],
+                speechConfig: {
+                    voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }
+                }
             },
             callbacks: {
                 onopen: () => {
                     setIsActive(true);
                     console.log("Live API Connected");
                     
-                    // Setup Input Stream
+                    // Setup Audio Chain: Source -> Gain (Boost) -> Processor -> Destination
                     const source = inputContext.createMediaStreamSource(stream);
+                    const gainNode = inputContext.createGain();
                     const processor = inputContext.createScriptProcessor(4096, 1, 1);
                     
+                    // BOOST VOLUME for kids (2.0x)
+                    gainNode.gain.value = 2.0; 
+
                     processor.onaudioprocess = (e) => {
+                        // CRITICAL CHECK: If mic is toggled off in UI, do not send data
+                        if (!isMicOnRef.current) return;
+
                         const inputData = e.inputBuffer.getChannelData(0);
                         const pcmBlob = createPcmBlob(inputData);
                         sessionPromise.then(session => {
@@ -66,13 +94,15 @@ const VoiceController: React.FC<Props> = ({ onAction, audioContext }) => {
                         });
                     };
 
-                    source.connect(processor);
+                    source.connect(gainNode);
+                    gainNode.connect(processor);
                     processor.connect(inputContext.destination);
                     
                     inputSourceRef.current = source;
+                    gainNodeRef.current = gainNode;
                     processorRef.current = processor;
 
-                    // FORCE GREETING with a slight delay to ensure socket is ready
+                    // GREETING
                     setTimeout(() => {
                         sessionPromise.then(session => {
                             console.log("Triggering Greeting...");
@@ -83,7 +113,20 @@ const VoiceController: React.FC<Props> = ({ onAction, audioContext }) => {
                     }, 500);
                 },
                 onmessage: async (msg: LiveServerMessage) => {
-                    // Handle Audio Output
+                    // 1. Handle Interruption (Child spoke while AI was speaking)
+                    const interrupted = msg.serverContent?.interrupted;
+                    if (interrupted) {
+                        console.log("Interrupted by user");
+                        if (activeSourceRef.current) {
+                            try { activeSourceRef.current.stop(); } catch(e){}
+                            activeSourceRef.current = null;
+                        }
+                        setIsSpeaking(false);
+                        nextStartTimeRef.current = 0;
+                        return; // Stop processing this message
+                    }
+
+                    // 2. Handle Audio Output
                     const audioData = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
                     if (audioData) {
                         try {
@@ -95,7 +138,7 @@ const VoiceController: React.FC<Props> = ({ onAction, audioContext }) => {
                         } catch (e) { console.error("Decode Error", e); }
                     }
 
-                    // Handle Function Calls
+                    // 3. Handle Function Calls
                     const toolCall = msg.toolCall;
                     if (toolCall) {
                         for (const fc of toolCall.functionCalls) {
@@ -120,7 +163,8 @@ const VoiceController: React.FC<Props> = ({ onAction, audioContext }) => {
                 },
                 onerror: (e) => {
                     console.error("Session Error", e);
-                    setError("Bağlantı Hatası");
+                    // Don't show error immediately to kid, try to silent reconnect or just log
+                    if (!isActive) setError("Bağlantı Hatası");
                 }
             }
         });
@@ -134,7 +178,9 @@ const VoiceController: React.FC<Props> = ({ onAction, audioContext }) => {
   };
 
   const playAudio = (buffer: AudioBuffer) => {
-      // Create source from the passed audioContext
+      // MUTE CHECK
+      if (isMuted) return;
+
       const ctx = audioContext;
       const source = ctx.createBufferSource();
       source.buffer = buffer;
@@ -145,11 +191,14 @@ const VoiceController: React.FC<Props> = ({ onAction, audioContext }) => {
       
       source.start(startTime);
       nextStartTimeRef.current = startTime + buffer.duration;
-
-      // Visual feedback logic
+      
+      activeSourceRef.current = source;
       setIsSpeaking(true);
+
       source.onended = () => {
-          // Only turn off if no other audio is scheduled closely (simplified)
+          if (activeSourceRef.current === source) {
+             activeSourceRef.current = null;
+          }
           if (ctx.currentTime >= nextStartTimeRef.current - 0.1) {
              setIsSpeaking(false);
           }
@@ -158,18 +207,24 @@ const VoiceController: React.FC<Props> = ({ onAction, audioContext }) => {
 
   const stopSession = () => {
      if (inputSourceRef.current) inputSourceRef.current.disconnect();
+     if (gainNodeRef.current) gainNodeRef.current.disconnect();
      if (processorRef.current) processorRef.current.disconnect();
-     // Do not close audioContext as it belongs to App
+     if (activeSourceRef.current) {
+         try { activeSourceRef.current.stop(); } catch(e){}
+     }
   };
 
   return (
     <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 p-3 rounded-full shadow-lg transition-all ${isActive ? 'bg-white border-2 border-green-400' : 'bg-gray-100'}`}>
-        <div className={`w-4 h-4 rounded-full flex items-center justify-center ${isActive ? 'bg-green-500' : 'bg-red-500'}`}>
-             {isSpeaking && <div className="w-full h-full bg-green-300 rounded-full animate-ping"></div>}
+        <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${isActive ? (isMicOn ? (isSpeaking ? 'bg-purple-500' : 'bg-green-500') : 'bg-gray-400') : 'bg-red-500'}`}>
+             {isSpeaking && isMicOn && <div className="w-full h-full bg-purple-300 rounded-full animate-ping"></div>}
+             {!isSpeaking && isActive && isMicOn && <div className="w-full h-full bg-green-300 rounded-full animate-pulse"></div>}
         </div>
-        <span className="font-bold text-sm text-gray-600">
-            {error ? error : (isActive ? (isSpeaking ? 'Konuşuyor...' : 'Dinliyor...') : 'Bağlanıyor...')}
+        <span className="font-bold text-sm text-gray-600 select-none hidden md:inline">
+            {error ? error : (isActive ? (isMicOn ? (isSpeaking ? 'Konuşuyor...' : 'Dinliyor...') : 'Mikrofon Kapalı') : 'Bağlanıyor...')}
         </span>
+        {!isMicOn && <span className="text-red-500 text-xs font-bold">❌</span>}
+        {isMuted && <span className="text-red-500 text-xs font-bold">🔇</span>}
     </div>
   );
 };

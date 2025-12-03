@@ -15,7 +15,12 @@ export const generateCharacterImage = async (
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: prompt,
+      contents: { parts: [{ text: prompt }] },
+      config: {
+        imageConfig: {
+            aspectRatio: "1:1"
+        }
+      }
     });
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
@@ -30,6 +35,34 @@ export const generateCharacterImage = async (
   }
 };
 
+export const generateColoringTemplate = async (subject: string): Promise<string | null> => {
+  const ai = getClient();
+  // Prompt optimized for flood-fill coloring (high contrast, closed lines)
+  const prompt = `A simple black and white coloring book page of a ${subject}. Thick black outlines, pure white background. High contrast, vector style, cute, simple shapes for children, no shading, no gray areas.`;
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: { parts: [{ text: prompt }] },
+      config: {
+        imageConfig: {
+            aspectRatio: "4:3"
+        }
+      }
+    });
+
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData) {
+            return `data:image/png;base64,${part.inlineData.data}`;
+        }
+    }
+    return null;
+  } catch (error) {
+    console.error("Template Error:", error);
+    return null;
+  }
+};
+
 export const generateLevelImage = async (promptDescription: string): Promise<string | null> => {
   const ai = getClient();
   const prompt = `Simple, cute, colorful cartoon icon of: ${promptDescription}. Isolated on white background, thick outlines, coloring book style but colored.`;
@@ -37,7 +70,12 @@ export const generateLevelImage = async (promptDescription: string): Promise<str
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: prompt,
+      contents: { parts: [{ text: prompt }] },
+      config: {
+        imageConfig: {
+            aspectRatio: "1:1"
+        }
+      }
     });
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
@@ -91,7 +129,7 @@ export const tools: FunctionDeclaration[] = [
         screen: {
           type: Type.STRING,
           enum: Object.values(AppScreen),
-          description: 'The screen to navigate to.',
+          description: 'The screen to navigate to. Available: MENU, CHARACTER_CREATOR, PAINTING, CIPHER_GAME, PATTERN_GAME, TREASURE_HUNT, MEMORY_GAME, MISSING_SYMBOL, NUMBER_HUNTER, DETECTIVE_GAME, SHADOW_MATCH',
         },
       },
       required: ['screen'],
