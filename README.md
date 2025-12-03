@@ -104,3 +104,4 @@ Projeyi yerel ortamınızda çalıştırmak için:
 ---
 
 *Geleceğin mucitleri için sevgiyle kodlandı.* ❤️
+Oyunu oynamak için : https://ai.studio/apps/drive/1XGZZJpTgY9ZQ3KPvtdPm-B5sewPHFcZz?fullscreenApplet=true
